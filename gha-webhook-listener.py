@@ -37,7 +37,6 @@ import zipfile
 from io import BytesIO
 
 import requests
-from dateutil import parser as dateparser
 from flask import Flask, abort, jsonify, request
 
 logging.basicConfig(level=logging.INFO)
