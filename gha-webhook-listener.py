@@ -266,7 +266,7 @@ if __name__ == "__main__":
         ), required=True,
     )
 
-    # We require a matching webhook token, but because we take everything else
+    # We require a matching signature, but because we take everything else
     # about what to deploy from the poke body, we can be a little more paranoid
     # and only accept artifacts from a specific Github org
     parser.add_argument(
