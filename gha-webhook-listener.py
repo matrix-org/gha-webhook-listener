@@ -271,7 +271,7 @@ if __name__ == "__main__":
 
     # We require a matching webhook token, but because we take everything else
     # about what to deploy from the poke body, we can be a little more paranoid
-    # and only accept builds / artifacts from a specific Github org
+    # and only accept artifacts from a specific Github org
     parser.add_argument(
         "--org", dest="github_org", help=(
             "Lock down to this Github org"
