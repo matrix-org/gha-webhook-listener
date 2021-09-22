@@ -168,7 +168,7 @@ def on_receive_poke():
     if os.path.exists(target_dir):
         abort(400, "Not deploying. We have previously deployed this build.")
 
-    # Github might time out the request if it takes longer than 10s, and fetching
+    # Github might time out the request if it takes a long time, and fetching
     # the tarball may take some time, so we return success now and run the
     # download and deployment in the background.
     versions_to_keep = arg_keep_versions
