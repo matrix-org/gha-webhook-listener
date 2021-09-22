@@ -142,7 +142,7 @@ def on_receive_poke():
 
     artifact_to_deploy = None
     for artifact in artifacts_array:
-        logging.info("Artifact name is %s", artifact['name'])
+        logger.debug("Considering artifact %s", artifact['name'])
         if re.match(arg_artifact_pattern, artifact['name']):
             artifact_to_deploy = artifact
 
