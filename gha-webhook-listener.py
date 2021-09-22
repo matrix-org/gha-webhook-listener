@@ -204,8 +204,6 @@ def deploy_tarball(artifact_url, target_dir):
     zipped_artifact = zipfile.ZipFile(BytesIO(resp.content))
     tarball = zipped_artifact.open('content.tar.gz')
 
-    # TODO: make the compression type depend on the filename
-    # (or copy it to a temporary file so that tarfile can autodetect)
     with tarfile.open(fileobj=tarball, mode="r:gz") as tar:
         tar.extractall(path=target_dir)
     logger.info("...download complete.")
