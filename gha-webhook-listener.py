@@ -86,7 +86,7 @@ def on_receive_poke():
     incoming_data = request.data
 
     if not validate_signature(incoming_data, incoming_signature, arg_webhook_token):
-        logger.info("Denying request with incorrect webhook token: %s", got_webhook_token)
+        logger.info("Denying request with incorrect signature")
         abort(400, "Incorrect signature")
         return
 
