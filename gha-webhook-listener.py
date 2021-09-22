@@ -76,8 +76,11 @@ def req_headers():
 def validate_signature(data, signature, token):
     github_secret = token.encode('utf-8')
     expected_signature = hmac.new(key=github_secret, msg=data, digestmod=hashlib.sha256).hexdigest()
-    signature = signature.split('sha256=')[-1].strip()
-    return hmac.compare_digest(signature, expected_signature)
+    if not signature.startswith('sha256='):
+        return False
+    else:
+        signature = signature.split('sha256=')[-1].strip()
+        return hmac.compare_digest(signature, expected_signature)
 
 
 @app.route("/", methods=["POST"])
