@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--webhook-token", dest="webhook_token", help=(
-            "Only accept pokes with this Github token."
+            "Only accept pokes signed with this Github token."
         ), required=True,
     )
 
