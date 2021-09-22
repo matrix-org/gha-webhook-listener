@@ -5,8 +5,7 @@
 # Listens for Github webhook pokes. When it gets one, downloads the artifact
 # from Github and unpacks it.
 #
-# Copyright 2019 New Vector Ltd
-# Copyright 2021 The Matrix.org Foundation C.I.C.
+# Copyright 2019-2021 The Matrix.org Foundation C.I.C.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
