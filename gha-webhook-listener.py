@@ -73,7 +73,18 @@ def req_headers():
     }
 
 
-def validate_signature(data, signature, token):
+def validate_signature(data: bytes, signature: str, token: str) -> bool:
+    """
+    Checks that the request comes from a trusted source.
+
+    Args:
+        data: data which the signature ought to be applied to
+        signature: signature that was sent in the request headers
+        token: the secret we know and expect Github to use to sign data
+
+    Returns:
+        Whether the signature matches our expectations
+    """
     github_secret = token.encode('utf-8')
     expected_signature = hmac.new(key=github_secret, msg=data, digestmod=hashlib.sha256).hexdigest()
     if not signature.startswith('sha256='):
