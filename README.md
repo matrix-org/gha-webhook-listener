@@ -1,7 +1,7 @@
-buildkite-webhook-listener
+gha-webhook-listener
 ==========================
 
-Simple flask listener which will wait for buildkite webhook pokes, and when it
+Simple flask listener which will wait for Github webhook pokes, and when it
 gets one, downloads an artifact and unpacks it.
 
 For more details, see `--help`.
