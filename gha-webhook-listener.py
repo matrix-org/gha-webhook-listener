@@ -83,6 +83,11 @@ def validate_signature(data, signature, token):
 @app.route("/", methods=["POST"])
 def on_receive_poke():
     incoming_signature = request.headers.get('X-Hub-Signature-256')
+    if incoming_signature is None:
+        logger.info("Denying unsigned request")
+        abort(400, "Signature missing")
+        return
+
     incoming_data = request.data
 
     if not validate_signature(incoming_data, incoming_signature, arg_webhook_token):
