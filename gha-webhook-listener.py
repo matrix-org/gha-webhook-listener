@@ -23,22 +23,22 @@
 from __future__ import print_function
 
 import argparse
-from dateutil import parser as dateparser
 import errno
-import logging
 import glob
 import hashlib
 import hmac
-from io import BytesIO
+import logging
 import os
 import re
 import shutil
 import tarfile
 import threading
 import zipfile
+from io import BytesIO
 
-from flask import Flask, abort, jsonify, request
 import requests
+from dateutil import parser as dateparser
+from flask import Flask, abort, jsonify, request
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
