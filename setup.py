@@ -20,7 +20,6 @@ from setuptools import setup
 setup(
     name="gha-webhook-listener",
     install_requires=[
-        "python-dateutil",
         "flask",
         "requests",
     ],
