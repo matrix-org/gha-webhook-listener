@@ -44,6 +44,7 @@ logger = logging.getLogger()
 app = Flask(__name__)
 
 arg_extract_path = None
+arg_archive_name = None
 arg_symlink = None
 arg_webhook_token = None
 arg_api_token = None
@@ -219,7 +220,7 @@ def deploy_tarball(artifact_url, target_dir):
     # GHA artifacts are wrapped in a zip file, so we extract it to get our tarball
     # See https://github.com/actions/upload-artifact/issues/109
     zipped_artifact = zipfile.ZipFile(BytesIO(resp.content))
-    tarball = zipped_artifact.open('content.tar.gz')
+    tarball = zipped_artifact.open(arg_archive_name)
 
     with tarfile.open(fileobj=tarball, mode="r:gz") as tar:
         tar.extractall(path=target_dir)
@@ -259,6 +260,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--extract", dest="extract", default="./extracted", help=(
             "The location to extract .tar.gz files to. "
+            "Default: %(default)s"
+        )
+    )
+
+    parser.add_argument(
+        "-a", "--archive-name", dest="archive_name", default="content.tar.gz", help=(
+            "The name of the .tar.gz file within the artifact. "
             "Default: %(default)s"
         )
     )
@@ -312,6 +320,7 @@ if __name__ == "__main__":
         parser.error("keep-versions should be unset or > 0")
 
     arg_extract_path = args.extract
+    arg_archive_name = args.archive_name
     arg_symlink = args.symlink
     arg_webhook_token = args.webhook_token
     arg_api_token = args.api_token
