@@ -88,9 +88,8 @@ def validate_signature(data: bytes, signature: str, token: str) -> bool:
     expected_signature = hmac.new(key=github_secret, msg=data, digestmod=hashlib.sha256).hexdigest()
     if not signature.startswith('sha256='):
         return False
-    else:
-        signature = signature.split('sha256=')[-1].strip()
-        return hmac.compare_digest(signature, expected_signature)
+    signature = signature[7:].strip()
+    return hmac.compare_digest(signature, expected_signature)
 
 
 @app.route("/", methods=["POST"])
