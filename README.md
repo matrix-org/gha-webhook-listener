@@ -1,8 +1,9 @@
-gha-webhook-listener
-==========================
+# gha-webhook-listener
 
 Simple flask listener which will wait for Github webhook pokes, and when it
 gets one, downloads an artifact and unpacks it.
+
+Based on [a Buildkite version](https://github.com/matrix-org/buildkite-webhook-listener).
 
 For more details, see `--help`.
 
