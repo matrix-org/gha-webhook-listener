@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--branch-name", dest="branch_name", default="master", help=(
-            "Name of the branch to only accept pushes from."
+            "Branch to accept build notifications for. Notifications for other branches will be ignored. "
             "Default: %(default)s"
         )
     )
