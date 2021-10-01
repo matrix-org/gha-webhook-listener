@@ -191,9 +191,11 @@ def process_poke() -> None:
     #       a good deploy with a bad one
     #   (b) we'll be overwriting the live deployment, which means people might
     #       see half-written files.
-    target_dir = os.path.join(arg_extract_path, "%s-#%i" % (workflow_id, build_id))
-    if os.path.exists(target_dir):
-        abort(400, "Not deploying. We have previously deployed this build.")
+    target_dir = "%s-#%i" % (workflow_id, build_id)
+    target_path = os.path.join(arg_extract_path, target_dir)
+    if os.path.exists(target_path):
+        logger.info("Not deploying. We have previously deployed this build.")
+        return
 
     # Github might time out the request if it takes a long time, and fetching
     # the tarball may take some time, so we return success now and run the
@@ -204,10 +206,10 @@ def process_poke() -> None:
     def deploy():
         logger.info("awaiting deploy lock")
         with deploy_lock:
-            logger.info("Got deploy lock; deploying to %s", target_dir)
-            deploy_tarball(url, target_dir)
+            logger.info("Got deploy lock; deploying to %s", target_path)
+            deploy_tarball(url, target_path)
             if versions_to_keep is not None:
-                tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep)
+                tidy_extract_directory(target_path, cleanup_dir, versions_to_keep)
 
     threading.Thread(target=deploy).start()
 
