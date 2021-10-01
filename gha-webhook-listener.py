@@ -302,8 +302,9 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--branch-name", dest="branch_name", default="master", help=(
-            "Name of the branch to deploy from."
-        ), required=True,
+            "Name of the branch to only accept pushes from."
+            "Default: %(default)s"
+        )
     )
 
     # We require a matching signature, but because we take everything else
