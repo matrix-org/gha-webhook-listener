@@ -111,7 +111,7 @@ def on_receive_poke():
 
     required_api_prefix = None
     if arg_github_org is not None:
-        required_api_prefix = f'https://api.github.com/repos/{arg_github_org}/matrix.org/actions/artifacts'
+        required_api_prefix = 'https://api.github.com/repos/%s/matrix.org/actions/artifacts' % arg_github_org
 
     incoming_json = request.get_json()
     if not incoming_json:
@@ -140,9 +140,9 @@ def on_receive_poke():
 
     workflow_branch = incoming_json["workflow_run"]["head_branch"]
     if workflow_branch == arg_branch_name:
-        logger.info(f"Workflow was for branch {arg_branch_name}")
+        logger.info("Workflow was for branch %s", arg_branch_name)
     else:
-        logger.info(f"Ignoring {event} event from branch {workflow_branch}")
+        logger.info("Ignoring %s event from branch %s", event, workflow_branch)
         return jsonify({})
 
     build_id = incoming_json["workflow_run"]["id"]
