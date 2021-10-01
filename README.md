@@ -8,7 +8,7 @@ Based on [a Buildkite version](https://github.com/matrix-org/buildkite-webhook-l
 ## Github setup
 
 Go to the project “Settings”, in the “Webhooks” section, and click on the “Add webhook” button.
-Make sure you set the “Content type” to `application/x-www-form-urlencoded`.
+Make sure you set the “Content type” to `application/json`.
 The “Secret” is what you’ll pass as `--webhook-token` to the listener.
 Choose the “Let me select individual events” option and check *only* the “Workflow runs” box.
 
