@@ -23,7 +23,7 @@ setup(
         "flask",
         "requests",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     scripts=[
         "gha-webhook-listener.py",
     ],

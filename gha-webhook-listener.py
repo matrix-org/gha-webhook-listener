@@ -86,9 +86,11 @@ def validate_signature(data: bytes, signature: str, token: str) -> bool:
     Returns:
         Whether the signature matches our expectations
     """
-    github_secret = token.encode('utf-8')
-    expected_signature = hmac.new(key=github_secret, msg=data, digestmod=hashlib.sha256).hexdigest()
-    if not signature.startswith('sha256='):
+    github_secret = token.encode("utf-8")
+    expected_signature = hmac.new(
+        key=github_secret, msg=data, digestmod=hashlib.sha256
+    ).hexdigest()
+    if not signature.startswith("sha256="):
         return False
     signature = signature[7:].strip()
     return hmac.compare_digest(signature, expected_signature)
@@ -96,7 +98,7 @@ def validate_signature(data: bytes, signature: str, token: str) -> bool:
 
 @app.route("/", methods=["POST"])
 def on_receive_poke():
-    incoming_signature = request.headers.get('X-Hub-Signature-256')
+    incoming_signature = request.headers.get("X-Hub-Signature-256")
     if incoming_signature is None:
         logger.info("Denying unsigned request")
         abort(400, "Signature missing")
@@ -111,7 +113,10 @@ def on_receive_poke():
 
     required_api_prefix = None
     if arg_github_org is not None:
-        required_api_prefix = f'https://api.github.com/repos/{arg_github_org}/matrix.org/actions/artifacts'
+        required_api_prefix = (
+            "https://api.github.com/repos/%s/matrix.org/actions/artifacts"
+            % arg_github_org
+        )
 
     incoming_json = request.get_json()
     if not incoming_json:
@@ -140,9 +145,9 @@ def on_receive_poke():
 
     workflow_branch = incoming_json["workflow_run"]["head_branch"]
     if workflow_branch == arg_branch_name:
-        logger.info(f"Workflow was for branch {arg_branch_name}")
+        logger.info("Workflow was for branch %s", arg_branch_name)
     else:
-        logger.info(f"Ignoring {event} event from branch {workflow_branch}")
+        logger.info("Ignoring %s event from branch %s", event, workflow_branch)
         return jsonify({})
 
     build_id = incoming_json["workflow_run"]["id"]
@@ -163,12 +168,12 @@ def on_receive_poke():
     logger.info("Fetching %s", artifacts_url)
     artifacts_resp = requests.get(artifacts_url, headers=req_headers())
     artifacts_resp.raise_for_status()
-    artifacts_array = artifacts_resp.json()['artifacts']
+    artifacts_array = artifacts_resp.json()["artifacts"]
 
     artifact_to_deploy = None
     for artifact in artifacts_array:
-        logger.debug("Considering artifact %s", artifact['name'])
-        if re.match(arg_artifact_pattern, artifact['name']):
+        logger.debug("Considering artifact %s", artifact["name"])
+        if re.match(arg_artifact_pattern, artifact["name"]):
             artifact_to_deploy = artifact
 
     if artifact_to_deploy is None:
@@ -176,7 +181,7 @@ def on_receive_poke():
         return jsonify({})
 
     # double paranoia check: make sure the artifact is on the right org too
-    url = artifact_to_deploy['archive_download_url']
+    url = artifact_to_deploy["archive_download_url"]
     if required_api_prefix is not None and not url.startswith(required_api_prefix):
         logger.info("Denying poke for build url with incorrect prefix: %s", url)
         abort(400, "Refusing to deploy artifact from URL %s", url)
@@ -198,6 +203,7 @@ def on_receive_poke():
     # download and deployment in the background.
     versions_to_keep = arg_keep_versions
     cleanup_dir = arg_extract_path
+
     def deploy():
         logger.info("awaiting deploy lock")
         with deploy_lock:
@@ -235,7 +241,7 @@ def deploy_tarball(artifact_url, target_dir):
     logger.info("...download complete.")
 
     create_symlink(source=target_dir, linkname=arg_symlink)
-    
+
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
     """
@@ -249,84 +255,103 @@ def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
        versions_to_keep: count of versions to keep
     """
     directories = glob.glob(cleanup_dir + "/*-#*")
-    directories.sort(key = lambda x: os.path.getmtime(x))
+    directories.sort(key=lambda x: os.path.getmtime(x))
     to_delete = directories[:-versions_to_keep]
     logger.info("Deleting %i of %i directories", len(to_delete), len(directories))
     for target in to_delete:
         if target != target_dir:
             logger.info("Deleting %s", target)
             shutil.rmtree(target)
-        
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Runs a redeployment server.")
     parser.add_argument(
-        "-p", "--port", dest="port", default=4000, type=int, help=(
-            "The port to listen on for requests from Github. "
-            "Default: %(default)i"
-        )
+        "-p",
+        "--port",
+        dest="port",
+        default=4000,
+        type=int,
+        help=(
+            "The port to listen on for requests from Github. " "Default: %(default)i"
+        ),
     )
     parser.add_argument(
-        "-e", "--extract", dest="extract", default="./extracted", help=(
-            "The location to extract .tar.gz files to. "
-            "Default: %(default)s"
-        )
-    )
-
-    parser.add_argument(
-        "-a", "--archive-name", dest="archive_name", default="content.tar.gz", help=(
-            "The name of the .tar.gz file within the artifact. "
-            "Default: %(default)s"
-        )
+        "-e",
+        "--extract",
+        dest="extract",
+        default="./extracted",
+        help=("The location to extract .tar.gz files to. " "Default: %(default)s"),
     )
 
     parser.add_argument(
-        "-s", "--symlink", dest="symlink", default="./latest", help=(
+        "-a",
+        "--archive-name",
+        dest="archive_name",
+        default="content.tar.gz",
+        help=(
+            "The name of the .tar.gz file within the artifact. " "Default: %(default)s"
+        ),
+    )
+
+    parser.add_argument(
+        "-s",
+        "--symlink",
+        dest="symlink",
+        default="./latest",
+        help=(
             "Write a symlink to this location pointing to the extracted "
             "tarball. New builds will keep overwriting this symlink. "
             "Default: %(default)s"
-        )
+        ),
     )
 
     parser.add_argument(
-        "--webhook-token", dest="webhook_token", help=(
-            "Only accept pokes signed with this Github token."
-        ), required=True,
+        "--webhook-token",
+        dest="webhook_token",
+        help=("Only accept pokes signed with this Github token."),
+        required=True,
     )
 
     parser.add_argument(
-        "--api-token", dest="api_token", help=(
-            "API access token for Github. Requires repo scope."
-        ), required=True,
+        "--api-token",
+        dest="api_token",
+        help=("API access token for Github. Requires repo scope."),
+        required=True,
     )
 
     parser.add_argument(
-        "--branch-name", dest="branch_name", default="master", help=(
+        "--branch-name",
+        dest="branch_name",
+        default="master",
+        help=(
             "Branch to accept build notifications for. Notifications for other branches will be ignored. "
             "Default: %(default)s"
-        )
+        ),
     )
 
     # We require a matching signature, but because we take everything else
     # about what to deploy from the poke body, we can be a little more paranoid
     # and only accept artifacts from a specific Github org
     parser.add_argument(
-        "--org", dest="github_org", help=(
-            "Lock down to this Github org"
-        )
+        "--org", dest="github_org", help=("Lock down to this Github org")
     )
 
     parser.add_argument(
-        "--artifact-pattern", default="merged-content-artifact", help=(
-            "Define a regex which artifact names must match. "
-            "Default: %(default)s"
-        )
+        "--artifact-pattern",
+        default="merged-content-artifact",
+        help=(
+            "Define a regex which artifact names must match. " "Default: %(default)s"
+        ),
     )
 
     parser.add_argument(
-        "--keep-versions", type=int, help=(
+        "--keep-versions",
+        type=int,
+        help=(
             "Retain only this number of versions on disk. Set to a positive "
             "integer. Defaults to keeping all versions."
-        )
+        ),
     )
 
     args = parser.parse_args()
@@ -348,8 +373,8 @@ if __name__ == "__main__":
         os.mkdir(arg_extract_path)
 
     print(
-        "Listening on port %s. Extracting to %s. Symlinking to %s" %
-        (
+        "Listening on port %s. Extracting to %s. Symlinking to %s"
+        % (
             args.port,
             arg_extract_path,
             arg_symlink,
@@ -358,10 +383,10 @@ if __name__ == "__main__":
     )
     if arg_keep_versions is not None:
         print(
-            "Keeping only previous %i versions." % (arg_keep_versions, ),
+            "Keeping only previous %i versions." % (arg_keep_versions,),
             flush=True,
         )
     else:
-        print("Keeping all versions") 
+        print("Keeping all versions")
 
     app.run(port=args.port, debug=False)
