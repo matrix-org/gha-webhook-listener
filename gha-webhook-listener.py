@@ -138,13 +138,12 @@ def on_receive_poke():
         abort(400, "Unrecognised event")
         return
 
-    workflow_status = incoming_json["workflow_run"]["head_branch"]
-    if workflow_status == arg_branch_name:
+    workflow_branch = incoming_json["workflow_run"]["head_branch"]
+    if workflow_branch == arg_branch_name:
         logger.info(f"Workflow was for branch {arg_branch_name}")
     else:
-        logger.info("Rejecting '%s' event", event)
-        abort(400, "Wrong branch")
-        return
+        logger.info(f"Ignoring {event} event from branch {workflow_branch}")
+        return jsonify({})
 
     build_id = incoming_json["workflow_run"]["id"]
     if build_id is None:
