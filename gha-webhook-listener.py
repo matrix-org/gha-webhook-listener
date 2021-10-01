@@ -48,6 +48,7 @@ arg_archive_name = None
 arg_symlink = None
 arg_webhook_token = None
 arg_api_token = None
+arg_branch_name = None
 arg_artifact_pattern = None
 arg_keep_versions = None
 
@@ -135,6 +136,14 @@ def on_receive_poke():
     else:
         logger.info("Rejecting '%s' event", event)
         abort(400, "Unrecognised event")
+        return
+
+    workflow_status = incoming_json["workflow_run"]["head_branch"]
+    if workflow_status == arg_branch_name:
+        logger.info(f"Workflow was for branch {arg_branch_name}")
+    else:
+        logger.info("Rejecting '%s' event", event)
+        abort(400, "Wrong branch")
         return
 
     build_id = incoming_json["workflow_run"]["id"]
@@ -291,6 +300,12 @@ if __name__ == "__main__":
         ), required=True,
     )
 
+    parser.add_argument(
+        "--branch-name", dest="branch_name", default="master", help=(
+            "Name of the branch to deploy from."
+        ), required=True,
+    )
+
     # We require a matching signature, but because we take everything else
     # about what to deploy from the poke body, we can be a little more paranoid
     # and only accept artifacts from a specific Github org
@@ -324,6 +339,7 @@ if __name__ == "__main__":
     arg_symlink = args.symlink
     arg_webhook_token = args.webhook_token
     arg_api_token = args.api_token
+    arg_branch_name = args.branch_name
     arg_github_org = args.github_org
     arg_artifact_pattern = args.artifact_pattern
     arg_keep_versions = args.keep_versions
