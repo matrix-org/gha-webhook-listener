@@ -15,7 +15,9 @@ Choose the “Let me select individual events” option and check *only* the “
 
 ## Command-line options
 
-The API token passed on the command line is a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with `repo` access, from a Github user that can read the repository.
+The API token passed as `--api-token` on the command line should be a 
+[Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) 
+with `repo` access, from a Github user that can read the repository.
 
 For more details, see `--help`.
 
