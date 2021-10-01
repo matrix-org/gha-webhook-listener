@@ -54,6 +54,11 @@ arg_keep_versions = None
 
 deploy_lock = threading.Lock()
 
+@app.route("/", methods=["POST"])
+def on_receive_poke():
+    process_poke()
+    return jsonify({})
+
 
 def create_symlink(source, linkname):
     try:
@@ -96,8 +101,7 @@ def validate_signature(data: bytes, signature: str, token: str) -> bool:
     return hmac.compare_digest(signature, expected_signature)
 
 
-@app.route("/", methods=["POST"])
-def on_receive_poke():
+def process_poke() -> None:
     incoming_signature = request.headers.get("X-Hub-Signature-256")
     if incoming_signature is None:
         logger.info("Denying unsigned request")
@@ -105,10 +109,14 @@ def on_receive_poke():
         return
 
     incoming_data = request.data
-
     if not validate_signature(incoming_data, incoming_signature, arg_webhook_token):
         logger.info("Denying request with incorrect signature")
         abort(400, "Incorrect signature")
+        return
+
+    event = request.headers.get("X-GitHub-Event")
+    if event != "workflow_run":
+        logger.info("Ignoring event %s", event)
         return
 
     required_api_prefix = None
@@ -124,31 +132,20 @@ def on_receive_poke():
         return
     logger.debug("Incoming JSON: %s", incoming_json)
 
-    action = incoming_json.get("action")
-    if action is None:
-        abort(400, "No 'action' specified")
-        return
-
-    if action == "completed":
-        logger.info("Workflow completed")
-    else:
-        abort(400, "Not a suitable event")
+    action = incoming_json.get("action", "")
+    if action != "completed":
+        logger.info("Ignoring action %s", action)
         return
 
     workflow_status = incoming_json["workflow_run"]["conclusion"]
-    if workflow_status == "success":
-        logger.info("Workflow succeeded")
-    else:
-        logger.info("Rejecting '%s' event", event)
-        abort(400, "Unrecognised event")
+    if workflow_status != "success":
+        logger.info("Ignoring workflow status '%s'", workflow_status)
         return
 
     workflow_branch = incoming_json["workflow_run"]["head_branch"]
-    if workflow_branch == arg_branch_name:
-        logger.info("Workflow was for branch %s", arg_branch_name)
-    else:
-        logger.info("Ignoring %s event from branch %s", event, workflow_branch)
-        return jsonify({})
+    if workflow_branch != arg_branch_name:
+        logger.info("Ignoring build of branch %s", workflow_branch)
+        return
 
     build_id = incoming_json["workflow_run"]["id"]
     if build_id is None:
@@ -178,7 +175,7 @@ def on_receive_poke():
 
     if artifact_to_deploy is None:
         logger.info("No suitable artifacts found")
-        return jsonify({})
+        return
 
     # double paranoia check: make sure the artifact is on the right org too
     url = artifact_to_deploy["archive_download_url"]
@@ -213,9 +210,6 @@ def on_receive_poke():
                 tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep)
 
     threading.Thread(target=deploy).start()
-
-    return jsonify({})
-
 
 def deploy_tarball(artifact_url, target_dir):
     """Download a tarball from Github and unpack it
