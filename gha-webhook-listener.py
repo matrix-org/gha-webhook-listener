@@ -119,13 +119,6 @@ def process_poke() -> None:
         logger.info("Ignoring event %s", event)
         return
 
-    required_api_prefix = None
-    if arg_github_org is not None:
-        required_api_prefix = (
-            "https://api.github.com/repos/%s/matrix.org/actions/artifacts"
-            % arg_github_org
-        )
-
     incoming_json = request.get_json()
     if not incoming_json:
         abort(400, "No JSON provided!")
@@ -179,10 +172,12 @@ def process_poke() -> None:
 
     # double paranoia check: make sure the artifact is on the right org too
     url = artifact_to_deploy["archive_download_url"]
-    if required_api_prefix is not None and not url.startswith(required_api_prefix):
-        logger.info("Denying poke for build url with incorrect prefix: %s", url)
-        abort(400, "Refusing to deploy artifact from URL %s", url)
-        return
+    if arg_github_org is not None:
+        required_api_prefix = "https://api.github.com/repos/" + arg_github_org
+        if not url.startswith(required_api_prefix):
+            logger.info("Denying poke for build url with incorrect prefix: %s", url)
+            abort(400, "Refusing to deploy artifact from invalid url")
+            return
 
     # we extract into a directory based on the build number. This avoids the
     # problem of multiple builds building the same git version and thus having
