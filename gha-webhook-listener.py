@@ -219,16 +219,22 @@ def deploy_tarball(artifact_url, target_dir):
 
     logger.info("Fetching artifact %s -> %s...", artifact_url, target_dir)
 
-    resp = requests.get(artifact_url, stream=True, headers=req_headers())
-    resp.raise_for_status()
+    try:
+        resp = requests.get(artifact_url, stream=True, headers=req_headers())
+        resp.raise_for_status()
 
-    # GHA artifacts are wrapped in a zip file, so we extract it to get our tarball
-    # See https://github.com/actions/upload-artifact/issues/109
-    zipped_artifact = zipfile.ZipFile(BytesIO(resp.content))
-    tarball = zipped_artifact.open(arg_archive_name)
+        # GHA artifacts are wrapped in a zip file, so we extract it to get our tarball
+        # See https://github.com/actions/upload-artifact/issues/109
+        zipped_artifact = zipfile.ZipFile(BytesIO(resp.content))
+        tarball = zipped_artifact.open(arg_archive_name)
 
-    with tarfile.open(fileobj=tarball, mode="r:gz") as tar:
-        tar.extractall(path=target_dir)
+        with tarfile.open(fileobj=tarball, mode="r:gz") as tar:
+            tar.extractall(path=target_dir)
+    except Exception:
+        logger.exception("Error deploying tarball")
+        shutil.rmtree(target_dir)
+        return
+
     logger.info("...download complete.")
 
     create_symlink(source=target_dir, linkname=arg_symlink)
