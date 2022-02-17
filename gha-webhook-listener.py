@@ -31,6 +31,7 @@ import os
 import re
 import shutil
 import tarfile
+import tempfile
 import threading
 import zipfile
 from io import BytesIO
@@ -194,7 +195,8 @@ def process_poke() -> None:
 
     # Github might time out the request if it takes a long time, and fetching
     # the tarball may take some time, so we return success now and run the
-    # download and deployment in the background.
+    # download and deployment in the background. Unfortunately that means that
+    # we have no way to report errors back to the webhook.
     versions_to_keep = arg_keep_versions
     cleanup_dir = arg_extract_path
 
@@ -202,38 +204,46 @@ def process_poke() -> None:
         logger.info("awaiting deploy lock")
         with deploy_lock:
             logger.info("Got deploy lock; deploying to %s", target_path)
-            deploy_tarball(url, target_path)
-            if versions_to_keep is not None:
-                tidy_extract_directory(target_path, cleanup_dir, versions_to_keep)
+            try:
+                deploy_tarball(url, target_path)
+                if versions_to_keep is not None:
+                    tidy_extract_directory(target_path, cleanup_dir, versions_to_keep)
+            except Exception:
+                logger.exception("Error deploying %s to %s", url, target_path)
 
     threading.Thread(target=deploy).start()
 
-def deploy_tarball(artifact_url, target_dir):
-    """Download a tarball from Github and unpack it
 
-    Returns:
-        (str) the path to the unpacked deployment
-    """
-
-    os.mkdir(target_dir)
+def deploy_tarball(artifact_url: str, target_dir: str) -> None:
+    """Download a tarball from Github and unpack it"""
 
     logger.info("Fetching artifact %s -> %s...", artifact_url, target_dir)
 
-    try:
-        resp = requests.get(artifact_url, stream=True, headers=req_headers())
-        resp.raise_for_status()
+    resp = requests.get(artifact_url, stream=True, headers=req_headers())
+    resp.raise_for_status()
 
-        # GHA artifacts are wrapped in a zip file, so we extract it to get our tarball
-        # See https://github.com/actions/upload-artifact/issues/109
-        zipped_artifact = zipfile.ZipFile(BytesIO(resp.content))
+    # GHA artifacts are wrapped in a zip file, so we extract it to get our tarball
+    # See https://github.com/actions/upload-artifact/issues/109
+
+    # stream the content to a temporary file, rather than attempting to load it all
+    # into memory
+    # TemporaryFile takes care of closing and deleting the file.
+    with tempfile.TemporaryFile() as artifact_tmp:
+        for chunk in resp.iter_content():
+            artifact_tmp.write(chunk)
+
+        artifact_tmp.seek(0)
+
+        zipped_artifact = zipfile.ZipFile(artifact_tmp)
         tarball = zipped_artifact.open(arg_archive_name)
 
         with tarfile.open(fileobj=tarball, mode="r:gz") as tar:
-            tar.extractall(path=target_dir)
-    except Exception:
-        logger.exception("Error deploying tarball")
-        shutil.rmtree(target_dir)
-        return
+            os.mkdir(target_dir)
+            try:
+                tar.extractall(path=target_dir)
+            except Exception:
+                shutil.rmtree(target_dir)
+                raise
 
     logger.info("...download complete.")
 
