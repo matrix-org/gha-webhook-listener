@@ -229,7 +229,7 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
     # into memory
     # TemporaryFile takes care of closing and deleting the file.
     with tempfile.TemporaryFile() as artifact_tmp:
-        for chunk in resp.iter_content():
+        for chunk in resp.iter_content(chunk_size=10*1024):
             artifact_tmp.write(chunk)
 
         artifact_tmp.seek(0)
