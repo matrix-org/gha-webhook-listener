@@ -30,6 +30,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import threading
@@ -53,6 +54,7 @@ arg_branch_name = None
 arg_workflow_pattern = None
 arg_artifact_pattern = None
 arg_keep_versions = None
+arg_hook_script = None
 
 deploy_lock = threading.Lock()
 
@@ -255,6 +257,12 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
 
     create_symlink(source=target_dir, linkname=arg_symlink)
 
+    if arg_hook_script is not None:
+        logger.info("running hook script")
+        return_code = subprocess.run(arg_hook_script).returncode
+        if return_code != 0:
+            logger.info("got return code %i", return_code)
+
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
     """
@@ -372,6 +380,15 @@ if __name__ == "__main__":
         ),
     )
 
+    parser.add_argument(
+        "--hook-script",
+        type=int,
+        help=(
+            "Script to run after each workflow run is successfully extracted, "
+            "will be passed full path to new artifact as first argument."
+        ),
+    )
+
     args = parser.parse_args()
 
     if args.keep_versions is not None and args.keep_versions < 1:
@@ -387,6 +404,7 @@ if __name__ == "__main__":
     arg_workflow_pattern = args.workflow_pattern
     arg_artifact_pattern = args.artifact_pattern
     arg_keep_versions = args.keep_versions
+    arg_hook_script = args.hook_script
 
     if not os.path.isdir(arg_extract_path):
         os.mkdir(arg_extract_path)
