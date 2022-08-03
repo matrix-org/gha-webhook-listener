@@ -30,12 +30,10 @@ import logging
 import os
 import re
 import shutil
-import subprocess
 import tarfile
 import tempfile
 import threading
 import zipfile
-from io import BytesIO
 
 import requests
 from flask import Flask, abort, jsonify, request
