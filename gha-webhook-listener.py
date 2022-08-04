@@ -5,7 +5,7 @@
 # Listens for Github webhook pokes. When it gets one, downloads the artifact
 # from Github and unpacks it.
 #
-# Copyright 2019-2021 The Matrix.org Foundation C.I.C.
+# Copyright 2019-2022 The Matrix.org Foundation C.I.C.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import tarfile
 import tempfile
 import threading
 import zipfile
-from io import BytesIO
 
 import requests
 from flask import Flask, abort, jsonify, request
@@ -50,6 +49,7 @@ arg_symlink = None
 arg_webhook_token = None
 arg_api_token = None
 arg_branch_name = None
+arg_workflow_pattern = None
 arg_artifact_pattern = None
 arg_keep_versions = None
 
@@ -149,6 +149,11 @@ def process_poke() -> None:
     workflow_id = incoming_json["workflow_run"]["workflow_id"]
     if workflow_id is None:
         abort(400, "No 'workflow_id' specified")
+        return
+
+    workflow_name = incoming_json["workflow_run"]["name"]
+    if arg_workflow_pattern is not None and not re.match(arg_workflow_pattern, workflow_name):
+        logger.info("Ignoring workflow with name '%s'", workflow_name)
         return
 
     artifacts_url = incoming_json["workflow_run"]["artifacts_url"]
@@ -345,6 +350,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--workflow-pattern",
+        help=("Define a regex which workflow names must match. Defaults to matching all workflows."),
+    )
+
+    parser.add_argument(
         "--artifact-pattern",
         default="merged-content-artifact",
         help=(
@@ -373,6 +383,7 @@ if __name__ == "__main__":
     arg_api_token = args.api_token
     arg_branch_name = args.branch_name
     arg_github_org = args.github_org
+    arg_workflow_pattern = args.workflow_pattern
     arg_artifact_pattern = args.artifact_pattern
     arg_keep_versions = args.keep_versions
 
