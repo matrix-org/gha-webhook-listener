@@ -351,7 +351,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--workflow-pattern",
-        help=("Define a regex which workflow names must match. If omitted then will allow any."),
+        help=("Define a regex which workflow names must match. Defaults to matching all workflows."),
     )
 
     parser.add_argument(
