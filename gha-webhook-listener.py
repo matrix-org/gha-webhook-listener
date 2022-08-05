@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # auto-deploy listener script
 #
@@ -30,6 +30,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import threading
@@ -52,6 +53,7 @@ arg_branch_name = None
 arg_workflow_pattern = None
 arg_artifact_pattern = None
 arg_keep_versions = None
+arg_hook_script = None
 
 deploy_lock = threading.Lock()
 
@@ -254,6 +256,12 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
     if arg_symlink:
         create_symlink(source=target_dir, linkname=arg_symlink)
 
+    if arg_hook_script is not None:
+        logger.info("...running hook script")
+        return_code = subprocess.run([*arg_hook_script.split(), target_dir]).returncode
+        if return_code != 0:
+            logger.info("got return code %i", return_code)
+
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
     """
@@ -371,10 +379,22 @@ if __name__ == "__main__":
         ),
     )
 
+    parser.add_argument(
+        "--hook-script",
+        type=str,
+        help=(
+            "Script to run after each workflow run is processed, "
+            "will be passed full path to the extracted artifact as an argument."
+        ),
+    )
+
     args = parser.parse_args()
 
     if args.keep_versions is not None and args.keep_versions < 1:
         parser.error("keep-versions should be unset or > 0")
+
+    if args.hook_script is not None and not os.path.exists(args.hook_script.split(" ", 1)[0]):
+        parser.error("given hook-script cannot be found")
 
     arg_extract_path = args.extract
     arg_archive_name = args.archive_name
@@ -386,6 +406,7 @@ if __name__ == "__main__":
     arg_workflow_pattern = args.workflow_pattern
     arg_artifact_pattern = args.artifact_pattern
     arg_keep_versions = args.keep_versions
+    arg_hook_script = args.hook_script
 
     if not os.path.isdir(arg_extract_path):
         os.mkdir(arg_extract_path)
