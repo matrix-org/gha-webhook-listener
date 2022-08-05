@@ -251,8 +251,8 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
                 raise
 
     logger.info("...download complete.")
-
-    create_symlink(source=target_dir, linkname=arg_symlink)
+    if arg_symlink:
+        create_symlink(source=target_dir, linkname=arg_symlink)
 
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
@@ -391,14 +391,18 @@ if __name__ == "__main__":
         os.mkdir(arg_extract_path)
 
     print(
-        "Listening on port %s. Extracting to %s. Symlinking to %s"
+        "Listening on port %s. Extracting to %s."
         % (
             args.port,
             arg_extract_path,
-            arg_symlink,
         ),
         flush=True,
     )
+    if arg_symlink:
+        print(
+            "Symlinking to %s" % (arg_symlink,),
+            flush=True
+        )
     if arg_keep_versions is not None:
         print(
             "Keeping only previous %i versions." % (arg_keep_versions,),
