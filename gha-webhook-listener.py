@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # auto-deploy listener script
 #
@@ -29,7 +29,9 @@ import hmac
 import logging
 import os
 import re
+import shlex
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import threading
@@ -52,6 +54,7 @@ arg_branch_name = None
 arg_workflow_pattern = None
 arg_artifact_pattern = None
 arg_keep_versions = None
+arg_hook_script = None
 
 deploy_lock = threading.Lock()
 
@@ -252,7 +255,15 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
 
     logger.info("...download complete.")
 
-    create_symlink(source=target_dir, linkname=arg_symlink)
+    if arg_hook_script is not None:
+        logger.info("Running hook script '%s'", arg_hook_script)
+        return_code = subprocess.run(shlex.split(arg_hook_script) + [target_dir]).returncode
+        if return_code != 0:
+            logger.info("hook script exited with return code %i", return_code)
+            return  # skip symlink due to failure
+
+    if arg_symlink:
+        create_symlink(source=target_dir, linkname=arg_symlink)
 
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
@@ -371,6 +382,15 @@ if __name__ == "__main__":
         ),
     )
 
+    parser.add_argument(
+        "--hook-script",
+        type=str,
+        help=(
+            "Script to run after each workflow run is processed. "
+            "The full path to the extracted artifact will be passed as an argument."
+        ),
+    )
+
     args = parser.parse_args()
 
     if args.keep_versions is not None and args.keep_versions < 1:
@@ -386,19 +406,24 @@ if __name__ == "__main__":
     arg_workflow_pattern = args.workflow_pattern
     arg_artifact_pattern = args.artifact_pattern
     arg_keep_versions = args.keep_versions
+    arg_hook_script = args.hook_script
 
     if not os.path.isdir(arg_extract_path):
         os.mkdir(arg_extract_path)
 
     print(
-        "Listening on port %s. Extracting to %s. Symlinking to %s"
+        "Listening on port %s. Extracting to %s."
         % (
             args.port,
             arg_extract_path,
-            arg_symlink,
         ),
         flush=True,
     )
+    if arg_symlink:
+        print(
+            "Symlinking to %s" % (arg_symlink,),
+            flush=True
+        )
     if arg_keep_versions is not None:
         print(
             "Keeping only previous %i versions." % (arg_keep_versions,),
