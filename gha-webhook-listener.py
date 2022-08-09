@@ -29,6 +29,7 @@ import hmac
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -253,14 +254,16 @@ def deploy_tarball(artifact_url: str, target_dir: str) -> None:
                 raise
 
     logger.info("...download complete.")
-    if arg_symlink:
-        create_symlink(source=target_dir, linkname=arg_symlink)
 
     if arg_hook_script is not None:
-        logger.info("...running hook script")
-        return_code = subprocess.run([*arg_hook_script.split(), target_dir]).returncode
+        logger.info("Running hook script '%s'", arg_hook_script)
+        return_code = subprocess.run(shlex.split(arg_hook_script) + [target_dir]).returncode
         if return_code != 0:
-            logger.info("got return code %i", return_code)
+            logger.info("hook script exited with return code %i", return_code)
+            return  # skip symlink due to failure
+
+    if arg_symlink:
+        create_symlink(source=target_dir, linkname=arg_symlink)
 
 
 def tidy_extract_directory(target_dir, cleanup_dir, versions_to_keep):
@@ -383,8 +386,8 @@ if __name__ == "__main__":
         "--hook-script",
         type=str,
         help=(
-            "Script to run after each workflow run is processed, "
-            "will be passed full path to the extracted artifact as an argument."
+            "Script to run after each workflow run is processed. "
+            "The full path to the extracted artifact will be passed as an argument."
         ),
     )
 
@@ -392,9 +395,6 @@ if __name__ == "__main__":
 
     if args.keep_versions is not None and args.keep_versions < 1:
         parser.error("keep-versions should be unset or > 0")
-
-    if args.hook_script is not None and not os.path.exists(args.hook_script.split(" ", 1)[0]):
-        parser.error("given hook-script cannot be found")
 
     arg_extract_path = args.extract
     arg_archive_name = args.archive_name

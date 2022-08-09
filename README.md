@@ -15,20 +15,20 @@ Choose the “Let me select individual events” option and check *only* the “
 
 ## Command-line options
 
-| Option             | Short | Default                 | Description                                                                                                           |
-|--------------------|-------|-------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| --port             | -p    | 4000                    | The port to listen on for requests from Github                                                                        |
-| --extract          | -e    | ./extracted             | The location to extract .tar.gz files to                                                                              |
-| --archive-name     | -a    | content.tar.gz          | The name of the .tar.gz file within the artifact                                                                      |
-| --symlink          | -s    | ./latest                | Write a symlink to this location pointing to the extracted tarball. New builds will keep overwriting this symlink     |
-| --webhook-token    |       |                         | Only accept pokes signed with this Github token                                                                       |
-| --api-token        |       |                         | API access token for Github. Requires repo scope                                                                      |
-| --branch-name      |       | master                  | Branch to accept build notifications for. Notifications for other branches will be ignored                            |
-| --org              |       |                         | Lock down to this Github org                                                                                          |
-| --workflow-pattern |       |                         | Define a regex which workflow names must match                                                                        |
-| --artifact-pattern |       | merged-content-artifact | Define a regex which artifact names must match                                                                        |
-| --keep-versions    |       |                         | Retain only this number of versions on disk. Set to a positive integer                                                |
-| --hook-script      |       |                         | Script to run after each workflow run is processed, will be passed full path to the extracted artifact as an argument |
+| Option             | Short | Default                 | Description                                                                                                               |
+|--------------------|-------|-------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| --port             | -p    | 4000                    | The port to listen on for requests from Github                                                                            |
+| --extract          | -e    | ./extracted             | The location to extract .tar.gz files to                                                                                  |
+| --archive-name     | -a    | content.tar.gz          | The name of the .tar.gz file within the artifact                                                                          |
+| --symlink          | -s    | ./latest                | Write a symlink to this location pointing to the extracted tarball. New builds will keep overwriting this symlink         |
+| --webhook-token    |       |                         | Only accept pokes signed with this Github token                                                                           |
+| --api-token        |       |                         | API access token for Github. Requires repo scope                                                                          |
+| --branch-name      |       | master                  | Branch to accept build notifications for. Notifications for other branches will be ignored                                |
+| --org              |       |                         | Lock down to this Github org                                                                                              |
+| --workflow-pattern |       |                         | Define a regex which workflow names must match                                                                            |
+| --artifact-pattern |       | merged-content-artifact | Define a regex which artifact names must match                                                                            |
+| --keep-versions    |       |                         | Retain only this number of versions on disk. Set to a positive integer                                                    |
+| --hook-script      |       |                         | Script to run after each workflow run is processed. The full path to the extracted artifact will be passed as an argument |
 
 The API token passed as `--api-token` on the command line should be a 
 [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) 
