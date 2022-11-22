@@ -131,18 +131,29 @@ def process_poke() -> None:
 
     action = incoming_json.get("action", "")
     if action != "completed":
-        logger.info("Ignoring action %s", action)
+        logger.debug("Ignoring action %s", action)
+        return
+
+    workflow_run_event = incoming_json["workflow_run"]["event"]
+    if workflow_run_event not in ('push', 'workflow_dispatch'):
+        logger.debug("Ignoring workflow event '%s'", workflow_run_event)
         return
 
     workflow_status = incoming_json["workflow_run"]["conclusion"]
     if workflow_status != "success":
-        logger.info("Ignoring workflow status '%s'", workflow_status)
+        logger.debug("Ignoring workflow status '%s'", workflow_status)
         return
 
     workflow_branch = incoming_json["workflow_run"]["head_branch"]
     if workflow_branch != arg_branch_name:
         logger.info("Ignoring build of branch %s", workflow_branch)
         return
+
+    workflow_name = incoming_json["workflow_run"]["name"]
+    logger.info(
+        "Successful run of workflow '%s' triggered by '%s' on branch %s",
+        workflow_name, workflow_run_event, workflow_branch,
+    )
 
     build_id = incoming_json["workflow_run"]["id"]
     if build_id is None:
@@ -154,7 +165,6 @@ def process_poke() -> None:
         abort(400, "No 'workflow_id' specified")
         return
 
-    workflow_name = incoming_json["workflow_run"]["name"]
     if arg_workflow_pattern is not None and not re.match(arg_workflow_pattern, workflow_name):
         logger.info("Ignoring workflow with name '%s'", workflow_name)
         return
