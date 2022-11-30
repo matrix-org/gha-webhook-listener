@@ -135,7 +135,7 @@ def process_poke() -> None:
         return
 
     workflow_run_event = incoming_json["workflow_run"]["event"]
-    if workflow_run_event not in ('push', 'workflow_dispatch'):
+    if workflow_run_event not in ('push', 'workflow_dispatch', 'schedule'):
         logger.debug("Ignoring workflow event '%s'", workflow_run_event)
         return
 
